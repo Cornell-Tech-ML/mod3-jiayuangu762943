@@ -30,10 +30,34 @@ Fn = TypeVar("Fn")
 
 
 def device_jit(fn: Fn, **kwargs) -> Fn:
+    """Create a CUDA device function using Numba.
+
+    Args:
+    ----
+        fn (Fn): The function to decorate as a CUDA device function.
+        **kwargs (Any): Additional keyword arguments for the Numba decorator.
+
+    Returns:
+    -------
+        Fn: The CUDA-decorated device function.
+
+    """
     return _jit(device=True, **kwargs)(fn)  # type: ignore
 
 
 def jit(fn, **kwargs) -> FakeCUDAKernel:
+    """Create a CUDA kernel function using Numba.
+
+    Args:
+    ----
+        fn (Callable): The function to decorate as a CUDA kernel.
+        **kwargs (Any): Additional keyword arguments for the Numba decorator.
+
+    Returns:
+    -------
+        FakeCUDAKernel: The CUDA-decorated kernel function.
+
+    """
     return _jit(**kwargs)(fn)  # type: ignore
 
 
@@ -83,7 +107,7 @@ class CudaOps(TensorOps):
         return ret
 
     @staticmethod
-    def reduce(
+    def reduce(  # noqa: D102
         fn: Callable[[float, float], float], start: float = 0.0
     ) -> Callable[[Tensor, int], Tensor]:
         cufn: Callable[[float, float], float] = device_jit(fn)
@@ -105,7 +129,7 @@ class CudaOps(TensorOps):
         return ret
 
     @staticmethod
-    def matrix_multiply(a: Tensor, b: Tensor) -> Tensor:
+    def matrix_multiply(a: Tensor, b: Tensor) -> Tensor:  # noqa: D102
         # Make these always be a 3 dimensional multiply
         both_2d = 0
         if len(a.shape) == 2:
@@ -260,7 +284,7 @@ def _sum_practice(out: Storage, a: Storage, size: int) -> None:
         a (Storage): storage for `a` tensor.
         size (int):  length of a.
 
-    """
+    """  # noqa: D301, D404
     BLOCK_DIM = 32
 
     cache = cuda.shared.array(BLOCK_DIM, numba.float64)
@@ -292,6 +316,17 @@ jit_sum_practice = cuda.jit()(_sum_practice)
 
 
 def sum_practice(a: Tensor) -> TensorData:
+    """Apply the `_sum_practice` kernel to reduce an input tensor along blocks of a fixed size.
+
+    Args:
+    ----
+        a (Tensor): Input tensor.
+
+    Returns:
+    -------
+        TensorData: Reduced tensor data with size equal to the number of blocks.
+
+    """
     (size,) = a.shape
     threadsperblock = THREADS_PER_BLOCK
     blockspergrid = (size // THREADS_PER_BLOCK) + 1
@@ -333,7 +368,6 @@ def tensor_reduce(
         cache = cuda.shared.array(BLOCK_DIM, numba.float64)
         out_index = cuda.local.array(MAX_DIMS, numba.int32)
         out_pos = cuda.blockIdx.x
-        pos = cuda.threadIdx.x
 
         # TODO: Implement for Task 3.3.
         a_index = cuda.local.array(MAX_DIMS, numba.int32)
@@ -414,7 +448,7 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
         b (Storage): storage for `b` tensor.
         size (int): size of the square
 
-    """
+    """  # noqa: D404
     BLOCK_DIM = 32
     # TODO: Implement for Task 3.3.
     tx = cuda.threadIdx.x
@@ -450,6 +484,18 @@ jit_mm_practice = jit(_mm_practice)
 
 
 def mm_practice(a: Tensor, b: Tensor) -> TensorData:
+    """Perform matrix multiplication on two small fixed-size matrices using `_mm_practice`.
+
+    Args:
+    ----
+        a (Tensor): The left-hand side matrix.
+        b (Tensor): The right-hand side matrix.
+
+    Returns:
+    -------
+        TensorData: Resulting matrix from the multiplication.
+
+    """
     (size, _) = a.shape
     threadsperblock = (THREADS_PER_BLOCK, THREADS_PER_BLOCK)
     blockspergrid = 1
@@ -489,9 +535,9 @@ def _tensor_matrix_multiply(
     Returns:
         None : Fills in `out`
     """
-    a_batch_stride = a_strides[0] if a_shape[0] > 1 else 0
-    b_batch_stride = b_strides[0] if b_shape[0] > 1 else 0
-    # Batch dimension - fixed
+    # a_batch_stride = a_strides[0] if a_shape[0] > 1 else 0
+    # b_batch_stride = b_strides[0] if b_shape[0] > 1 else 0
+    # # Batch dimension - fixed
     batch = cuda.blockIdx.z
 
     BLOCK_DIM = 32
@@ -512,7 +558,6 @@ def _tensor_matrix_multiply(
     #    b) Copy into shared memory for b matrix
     #    c) Compute the dot produce for position c[i, j]
     # TODO: Implement for Task 3.4.
-    out_batch_stride = out_strides[0] if out_shape[0] > 1 else 0
     M = out_shape[-2]
     N = out_shape[-1]
     K = a_shape[-1]
