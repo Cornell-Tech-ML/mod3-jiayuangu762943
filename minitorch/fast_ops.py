@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, TypeVar, Any
 
 import numpy as np
-from numba import prange # type: ignore
-from numba import njit as _njit # type: ignore
+from numba import prange  # type: ignore
+from numba import njit as _njit  # type: ignore
 
 from .tensor_data import (
     broadcast_index,

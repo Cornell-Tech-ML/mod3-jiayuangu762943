@@ -51,7 +51,7 @@ class Linear(minitorch.Module):
         # Add bias
         output = output + self.bias.value  # Broadcasting over batch_size
         return output
-    
+
 
 class FastTrain:
     def __init__(self, hidden_layers, backend=FastTensorBackend):

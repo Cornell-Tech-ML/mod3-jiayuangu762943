@@ -92,11 +92,12 @@ def broadcast_index(
     """
     for i, s in enumerate(shape):
         if s > 1:
-            out_index[i] = big_index[i + len(big_shape) - len(shape) ]
+            out_index[i] = big_index[i + len(big_shape) - len(shape)]
         else:
             out_index[i] = 0
 
     return None
+
 
 def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
     """Broadcast two shapes to create a new union shape.
