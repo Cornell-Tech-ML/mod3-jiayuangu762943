@@ -1,5 +1,4 @@
-"""
-Description:
+"""Description:
 Note: Make sure that both the new and old module files are in same directory!
 
 This script helps you sync your previous module works with current modules.
@@ -10,6 +9,7 @@ Usage: python sync_previous_module.py <source_dir_name> <dest_dir_name>
 
 Ex:  python sync_previous_module.py mle-module-0-sauravpanda24 mle-module-1-sauravpanda24
 """
+
 import os
 import shutil
 import sys
@@ -27,7 +27,7 @@ grandparent_path = "/".join(current_path.split("/")[:-1])
 print("Looking for modules in : ", grandparent_path)
 
 # List of files which we want to move
-f = open("files_to_sync.txt", "r+")
+f = open("./mod3-jiayuangu762943/files_to_sync.txt", "r+")
 files_to_move = f.read().splitlines()
 f.close()
 
@@ -38,13 +38,13 @@ dest = sys.argv[2]
 # copy the files from source to destination
 try:
     for file in files_to_move:
-        print(f"Moving file : ", file)
+        print("Moving file : ", file)
         shutil.copy(
             os.path.join(grandparent_path, source, file),
             os.path.join(grandparent_path, dest, file),
         )
     print(f"Finished moving {len(files_to_move)} files")
-except Exception as e:
+except Exception:
     print(
         "Something went wrong! please check if the source and destination folders are present in same folder"
     )
