@@ -29,7 +29,7 @@ FakeCUDAKernel = Any
 Fn = TypeVar("Fn")
 
 
-def device_jit(fn: Fn, **kwargs) -> Fn:
+def device_jit(fn: Fn, **kwargs) -> Fn:  # noqa: ANN003
     """Create a CUDA device function using Numba.
 
     Args:
@@ -45,7 +45,7 @@ def device_jit(fn: Fn, **kwargs) -> Fn:
     return _jit(device=True, **kwargs)(fn)  # type: ignore
 
 
-def jit(fn, **kwargs) -> FakeCUDAKernel:
+def jit(fn, **kwargs) -> FakeCUDAKernel:  # noqa: ANN001, ANN003
     """Create a CUDA kernel function using Numba.
 
     Args:
@@ -91,6 +91,30 @@ class CudaOps(TensorOps):
 
     @staticmethod
     def zip(fn: Callable[[float, float], float]) -> Callable[[Tensor, Tensor], Tensor]:
+        """Creates a function that performs element-wise operations on two tensors using the specified binary operation.
+
+        Args:
+        ----
+            fn (Callable[[float, float], float]): A binary operation function that takes two floats as inputs
+                and returns a float as output.
+
+        Returns:
+        -------
+            Callable[[Tensor, Tensor], Tensor]: A function that takes two tensors as input, applies the specified
+                element-wise operation, and returns a tensor containing the results.
+
+        The returned function:
+            - Broadcasts the shapes of the input tensors to determine the output shape.
+            - Allocates an output tensor initialized with zeros to hold the results.
+            - Configures the CUDA kernel launch parameters (blocks per grid and threads per block).
+            - Executes the CUDA kernel using the binary operation on the input tensors.
+
+        Notes:
+        -----
+            - The input tensors must be compatible for broadcasting.
+            - CUDA kernel execution is performed via the `tensor_zip` function with `device_jit`-compiled binary function.
+
+        """
         cufn: Callable[[float, float], float] = device_jit(fn)
         f = tensor_zip(cufn)
 
@@ -259,7 +283,6 @@ def tensor_zip(
         a_pos = index_to_position(a_index, a_strides)
         b_pos = index_to_position(b_index, b_strides)
         out[out_pos] = fn(a_storage[a_pos], b_storage[b_pos])
-
 
     return cuda.jit()(_zip)  # type: ignore
 

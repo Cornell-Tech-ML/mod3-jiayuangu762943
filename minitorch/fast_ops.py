@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, TypeVar, Any
 
 import numpy as np
-from numba import prange
-from numba import njit as _njit
+from numba import prange # type: ignore
+from numba import njit as _njit # type: ignore
 
 from .tensor_data import (
     broadcast_index,
@@ -29,6 +29,27 @@ Fn = TypeVar("Fn")
 
 
 def njit(fn: Fn, **kwargs: Any) -> Fn:
+    """A decorator to apply Numba's `@njit` (no-Python mode just-in-time compilation)
+    to the given function with additional default options.
+
+    Args:
+    ----
+        fn (Fn): The function to be compiled by Numba's `njit`.
+        **kwargs (Any): Optional keyword arguments to customize the Numba `njit` decorator behavior.
+                        These may include options such as `nogil`, `fastmath`, etc.
+
+    Returns:
+    -------
+        Fn: The same function wrapped with Numba's `@njit`, optimized with the specified arguments.
+
+    Notes:
+    -----
+        - The `inline="always"` option is enforced by default for this wrapper,
+          which hints to Numba that the function should be inlined during compilation.
+        - Additional `kwargs` are passed directly to the Numba `njit` decorator.
+        - Requires Numba to be installed and properly configured.
+
+    """
     return _njit(inline="always", **kwargs)(fn)  # type: ignore
 
 
@@ -86,9 +107,9 @@ class FastOps(TensorOps):
         return ret
 
     @staticmethod
-    def mul_reduce(a: Tensor, dim: int) -> Tensor:
-        return FastOps.reduce(operators.mul, start=1.0)(a, dim)
-    
+    def mul_reduce(a: Tensor, dim: int) -> Tensor:  # noqa: D102
+        return FastOps.reduce(operators.mul, start=1.0)(a, dim)  # type: ignore # noqa: F821
+
     @staticmethod
     def matrix_multiply(a: Tensor, b: Tensor) -> Tensor:
         """Batched tensor matrix multiply ::
@@ -174,9 +195,8 @@ def tensor_map(
         # TODO: Implement for Task 3.1.
         size = np.prod(out_shape)
 
-        if (
-            np.array_equal(out_shape, in_shape)
-            and np.array_equal(out_strides, in_strides)
+        if np.array_equal(out_shape, in_shape) and np.array_equal(
+            out_strides, in_strides
         ):
             # Stride-aligned, avoid indexing
             for i in prange(size):
@@ -190,7 +210,6 @@ def tensor_map(
                 out_pos = index_to_position(out_index, out_strides)
                 in_pos = index_to_position(in_index, in_strides)
                 out[out_pos] = fn(in_storage[in_pos])
-            
 
     return njit(_map, parallel=True)  # type: ignore
 
@@ -398,6 +417,7 @@ def _tensor_matrix_multiply(
                     total += a_storage[int(a_pos)] * b_storage[int(b_pos)]
                 out_pos = out_row_offset + j * out_N_stride
                 out[int(out_pos)] = total
+
 
 tensor_matrix_multiply = njit(_tensor_matrix_multiply, parallel=True)
 assert tensor_matrix_multiply is not None
